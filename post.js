@@ -1,10 +1,10 @@
-fetch("https://127.0.0.0:5090/ai", {
+fetch("http://127.0.0.1:5090/edpuzzle", {
     method: "POST",
     headers: {
         "Content-Type": "application/json"
     },
     body: JSON.stringify({
-        "prompt": "why is the sky blue?"
+        "id": "67255ffd08f3511b2a42c403"
     })
 })
 .then(response => response.json())

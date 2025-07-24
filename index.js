@@ -15,6 +15,7 @@ body {
     cursor: pointer;
     padding: 15px;
     transition: all .2s ease;
+    margin-left: 1rem;
 }
 
 .btn:hover {
@@ -50,7 +51,7 @@ body {
     border-radius: 5px;
 }
 `;
-const windowFeatures = "left=100,top=100,width=520,height=520";
+const windowFeatures = "left=0,top=0,width=800,height=800";
 const popup = window.open("about:blank", "_blank", windowFeatures);
 if (!popup) {
     alert("Popup blocked!");
@@ -90,6 +91,7 @@ class ElementBuilder {
         return new ElementBuilder(doc, tag, className, idName);
     }
 }
+let assignmentData;
 const pDocument = popup.document;
 const pBody = popup.document.body;
 pDocument.head.appendChild(Object.assign(pDocument.createElement("style"), { textContent: styleText }));
@@ -97,10 +99,133 @@ pDocument.title = "EdPuzzle Hack";
 const container = ElementBuilder.create(pDocument, "div", "container").attachTo(pBody);
 const title = ElementBuilder.create(pDocument, "h1", "text").setText("EdPuzzle Hack");
 const skipVideoBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Skip Video.");
+const convertToJsonBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Create Payload.");
+const uploadJsonAnswerBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Upload JSON Answers");
 const questionWrapper = ElementBuilder.create(pDocument, "div", "question-container");
 container.append(title);
 container.append(skipVideoBtn);
+container.append(convertToJsonBtn);
+container.append(uploadJsonAnswerBtn);
+convertToJsonBtn.onClick(createPayloadFile);
 skipVideoBtn.onClick(skipVideo);
+uploadJsonAnswerBtn.onClick(uploadJsonAnswer);
+function uploadJsonAnswer() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.style.display = "none";
+    input.onchange = () => {
+        const file = input.files[0];
+        if (!file)
+            return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = reader.result;
+            if (typeof result === "string") {
+                const data = JSON.parse(result);
+                const answers = data.answers || [];
+                const questionElements = pDocument.querySelectorAll(".inner-question-container");
+                questionElements.forEach((questionEl) => {
+                    const questionTextRaw = questionEl.querySelector(".question-text")?.textContent || "";
+                    const questionText = sanitizeText(questionTextRaw.replace(/^\d+\.\s*/, ""));
+                    const matched = answers.find(q => {
+                        const answerText = sanitizeText(q.question);
+                        return questionText.includes(answerText) || answerText.includes(questionText);
+                    });
+                    const answerP = document.createElement("p");
+                    answerP.style.color = "lime";
+                    answerP.style.fontWeight = "bold";
+                    answerP.textContent = matched ? `Answer: ${matched.answer}` : "Answer: No Match";
+                    questionEl.appendChild(answerP);
+                });
+            }
+            else {
+                console.error("File content is not a string.");
+            }
+        };
+        reader.readAsText(file);
+    };
+    document.body.appendChild(input);
+    input.click();
+    input.remove();
+}
+const htmlPayloadContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generated Page</title>
+</head>
+<body>
+    <h1>This HTML was generated with TypeScript!</h1>
+    <p>Hello from a dynamically created file.</p>
+</body>
+</html>
+`;
+function createPayloadFile() {
+    try {
+        const questionElements = Array.from(pDocument.querySelectorAll(".inner-question-container"));
+        const payload = {
+            assignmentId: assignment_id,
+            questions: []
+        };
+        questionElements.forEach((questionElement) => {
+            const questionText = questionElement.querySelector(".question-text")?.textContent?.trim() || "";
+            const choiceElements = Array.from(questionElement.querySelectorAll(".question-choice"));
+            const choices = choiceElements.map((choiceElement) => {
+                return choiceElement.textContent?.trim() || "";
+            });
+            if (questionText) {
+                payload.questions.push({
+                    text: questionText,
+                    choices
+                });
+            }
+        });
+        downloadJsonFile(payload, `edpuzzle-payload-${assignment_id}.json`);
+        console.warn(`Payload created successfully`);
+        console.warn("Creating HTML file.");
+        downloadHtmlPayload();
+        console.warn("Created HTML Payload File.");
+    }
+    catch (error) {
+        console.error(`Error in createPayloadFile: ${error}`);
+        alert(`Payload creation failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+function downloadHtmlPayload() {
+    try {
+        const blob = new Blob([htmlPayloadContent], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "htmlPayload.html";
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+        popup.alert("Open 'htmlPayload.html' and upload the 'payload.json'");
+    }
+    catch (error) {
+        console.error(`Error in Creating HTML PayloadFile: ${error}`);
+    }
+}
+function downloadJsonFile(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 4)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+}
 async function appendQuestions() {
     try {
         const questions = await getQuestions();
@@ -125,10 +250,6 @@ async function appendQuestions() {
                         return;
                     const choiceText = ElementBuilder.create(pDocument, "p", "question-choice")
                         .setText(sanitizeString(choice.body[0].html));
-                    if (choice.isCorrect) {
-                        choiceText.getElement().style.color = "#4CAF50";
-                        choiceText.getElement().style.fontWeight = "bold";
-                    }
                     choicesContainer.append(choiceText);
                 });
                 questionContainer.append(choicesContainer);
@@ -143,6 +264,13 @@ async function appendQuestions() {
             .setText("Failed to load questions. Please try again.")
             .attachTo(questionWrapper.getElement());
     }
+}
+function sanitizeText(text) {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9 ]/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 function sanitizeString(htmlString) {
     const doc = new DOMParser().parseFromString(htmlString, "text/html");
@@ -160,6 +288,7 @@ async function getAssignment() {
     try {
         const response = await fetch(edpuzzle_api + assignment_id);
         const data = await response.json();
+        assignmentData = data;
         return data;
     }
     catch (error) {

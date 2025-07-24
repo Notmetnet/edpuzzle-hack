@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="https://cdn.nba.com/headshots/nba/latest/1040x760/2544.png" type="image/png" />
+    <title>Upload JSON</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            background: linear-gradient(155deg, #54546e 0%, #17173b 87%);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 400px;
+            height: 200px;
+            border: 2px dashed #888;
+            border-radius: 16px;
+            background-color: rgba(255, 255, 255, 0.03);
+            text-align: center;
+            padding: 20px;
+            color: #ccc;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .container.dragover {
+            background-color: rgba(0, 170, 255, 0.1);
+            border-color: #00aaff;
+            color: #00aaff;
+        }
+
+        .container p {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" id="dropZone">
+        <div class="upload-icon">woah..</div>
+        <p>Drag & Drop JSON Payload</p>
+        <p>or click to select a file</p>
+        <input type="file" id="fileInput" accept=".json" />
+    </div>
+
+    <script>
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+
+        dropZone.addEventListener("click", () => fileInput.click());
+
+        dropZone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZone.classList.add("dragover");
+        });
+
+        dropZone.addEventListener("dragleave", () => {
+            dropZone.classList.remove("dragover");
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                handleFiles(files);
+            }
+        });
+
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length) {
+                handleFiles(fileInput.files);
+            }
+        });
+
+        function handleFiles(files) {
+            const file = files[0]
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                const fileContent = reader.result
+
+                fetch("http://127.0.0.1:5090/upload", {
+                    method: "POST",
+                    "headers": {
+                        "Content-Type": "application/json"
+                    },
+                    body: fileContent
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Server response: ", data);
+
+                        const blob = new Blob([JSON.stringify(data, null, 4)], { type: "application/json" })
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = "answers.json";
+                        document.body.append(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    })
+            }
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+
+</html>

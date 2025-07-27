@@ -1,53 +1,88 @@
 const styleText = `
 body {
-    background: #3a3596;
-    background: linear-gradient(155deg,rgba(58, 53, 150, 1) 0%, rgba(39, 39, 61, 1) 87%);
-    color: white;
-    font-family: 'Arial', sans-serif;
+    background: linear-gradient(160deg, #2c3e50, #1a1a2e);
+    color: #f0f0f0;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    margin: 0;
+    padding: 2rem;
+    line-height: 1.6;
+}
+
+.text {
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+    color: #e0e0e0;
 }
 
 .btn {
-    color: white;
-    background-color: #242424;
-    border: none;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 15px;
     cursor: pointer;
-    padding: 15px;
-    transition: all .2s ease;
+    padding: 14px 24px;
+    transition: all 0.3s ease;
     margin-left: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    font-size: 1rem;
+    letter-spacing: 0.5px;
 }
 
 .btn:hover {
-    background-color: #323232;
-    transform: scale(1.08);
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.06);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .question-container {
     margin-top: 2rem;
     display: flex;
     flex-direction: column;
+    gap: 1.5rem;
 }
 
 .inner-question-container {
-    margin-bottom: 20px;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+}
+
+.inner-question-container:hover {
+    transform: scale(1.01);
+}
 
 .question-text {
-    margin-bottom: 10px;
-    color: #fff;
+    margin-bottom: 14px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffffff;
 }
 
 .choices-container {
-    margin-left: 20px;
+    margin-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .question-choice {
-    margin: 5px 0;
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 5px;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    transition: background 0.2s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.question-choice:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 `;
 
@@ -125,7 +160,7 @@ uploadJsonAnswerBtn.onClick(uploadJsonAnswer);
 
 
 function uploadJsonAnswer() {
-    const input = document.createElement("input");
+    const input = pDocument.createElement("input");
     input.type = "file";
     input.accept = ".json";
     input.style.display = "none";
@@ -167,7 +202,7 @@ function uploadJsonAnswer() {
         reader.readAsText(file);
     };
 
-    document.body.appendChild(input);
+    pDocument.body.appendChild(input);
     input.click();
     input.remove();
 }
@@ -187,14 +222,144 @@ interface EdpuzzlePayload {
 
 const htmlPayloadContent = `
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Generated Page</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="https://cdn.nba.com/headshots/nba/latest/1040x760/2544.png" type="image/png" />
+    <title>Upload JSON</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            background: linear-gradient(155deg, #54546e 0%, #17173b 87%);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 400px;
+            height: 200px;
+            border: 2px dashed #888;
+            border-radius: 16px;
+            background-color: rgba(255, 255, 255, 0.03);
+            text-align: center;
+            padding: 20px;
+            color: #ccc;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .container.dragover {
+            background-color: rgba(0, 170, 255, 0.1);
+            border-color: #00aaff;
+            color: #00aaff;
+        }
+
+        .container p {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+    </style>
 </head>
+
 <body>
-    <h1>This HTML was generated with TypeScript!</h1>
-    <p>Hello from a dynamically created file.</p>
+    <div class="container" id="dropZone">
+        <div class="upload-icon">woah..</div>
+        <p>Drag & Drop JSON Payload</p>
+        <p>or click to select a file</p>
+        <input type="file" id="fileInput" accept=".json" />
+    </div>
+
+    <script>
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+
+        dropZone.addEventListener("click", () => fileInput.click());
+
+        dropZone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZone.classList.add("dragover");
+        });
+
+        dropZone.addEventListener("dragleave", () => {
+            dropZone.classList.remove("dragover");
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                handleFiles(files);
+            }
+        });
+
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length) {
+                handleFiles(fileInput.files);
+            }
+        });
+
+        function handleFiles(files) {
+            const file = files[0]
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                const fileContent = reader.result
+
+                fetch("http://127.0.0.1:5090/upload", {
+                    method: "POST",
+                    "headers": {
+                        "Content-Type": "application/json"
+                    },
+                    body: fileContent
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Server response: ", data);
+
+                        const blob = new Blob([JSON.stringify(data, null, 4)], { type: "application/json" })
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = "answers.json";
+                        document.body.append(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    })
+            }
+            reader.readAsText(file);
+        }
+    </script>
 </body>
+
 </html>
 `
 
@@ -275,33 +440,41 @@ function downloadJsonFile(data: unknown, filename: string): void {
 
 async function appendQuestions() {
     try {
-        const questions = await getQuestions();
+        const assignment = await getQuestions(); // <-- this returns { content: {...}, questions: [...] }
+        const questions = assignment?.questions || [];
+
         questionWrapper.getElement().innerHTML = '';
 
-        if (!questions || !questions.length) {
+        if (!questions.length) {
             ElementBuilder.create(pDocument, "p", "no-questions")
                 .setText("No questions found in this assignment")
                 .attachTo(questionWrapper.getElement());
             return;
         }
 
-        questions.forEach((question, index) => {
-            if (!question.body?.[0]?.html) return;
+        questions.forEach((questionData, index) => {
+            const blocks = questionData.data?.body?.blocks || [];
+
+            const questionBlock = blocks.find(b => b.type === "text" && b.valueType === "html");
+            if (!questionBlock) return;
 
             const questionContainer = ElementBuilder.create(pDocument, "div", "inner-question-container");
+
             const questionText = ElementBuilder.create(pDocument, "h3", "question-text")
-                .setText(`${index + 1}. ${sanitizeString(question.body[0].html)}`);
+                .setText(`${index + 1}. ${sanitizeString(questionBlock.value)}`);
             questionContainer.append(questionText);
 
-            if (question.choices?.length) {
+            const choices = questionData.data?.choices || [];
+            if (choices.length) {
                 const choicesContainer = ElementBuilder.create(pDocument, "div", "choices-container");
 
-                question.choices.forEach(choice => {
-                    if (!choice.body?.[0]?.html) return;
+                choices.forEach(choice => {
+                    const choiceBlocks = choice.content?.blocks || [];
+                    const choiceTextBlock = choiceBlocks.find(b => b.type === "text" && b.valueType === "html");
+                    if (!choiceTextBlock) return;
 
                     const choiceText = ElementBuilder.create(pDocument, "p", "question-choice")
-                        .setText(sanitizeString(choice.body[0].html));
-
+                        .setText(sanitizeString(choiceTextBlock.value));
                     choicesContainer.append(choiceText);
                 });
 
@@ -312,6 +485,7 @@ async function appendQuestions() {
         });
 
         container.append(questionWrapper);
+
     } catch (error) {
         console.error("Error loading questions:", error);
         ElementBuilder.create(pDocument, "p", "error-message")
@@ -320,7 +494,7 @@ async function appendQuestions() {
     }
 }
 
-function sanitizeText(text) {
+function sanitizeText(text: string) {
     return text
         .toLowerCase()
         .replace(/[^a-z0-9 ]/gi, '') // remove punctuation
@@ -333,12 +507,19 @@ function sanitizeString(htmlString: string) {
     return doc.body.textContent || "";
 }
 
-appendQuestions();
-
-const edpuzzle_api = "https://edpuzzle.com/api/v3/assignments/";
+const edpuzzle_api = "https://edpuzzle.com/api/v3/learning/assignments/";
 const csrfApi = "https://edpuzzle.com/api/v3/csrf";
 const assignment_id = window.location.href.split("/")[4];
 
+function extractEdpuzzleIds(url: string): { assignmentId: string | null, attachmentId: string | null } {
+    const assignmentMatch = url.match(/assignments\/([a-f0-9]{24})/);
+    const assignmentId = assignmentMatch ? assignmentMatch[1] : null;
+
+    const urlObj = new URL(url);
+    const attachmentId = urlObj.searchParams.get("attachmentId");
+
+    return { assignmentId, attachmentId };
+}
 
 async function getAssignment() {
     if (!assignment_id) {
@@ -347,9 +528,11 @@ async function getAssignment() {
     }
 
     try {
-
-        const response = await fetch(edpuzzle_api + assignment_id);
+        const { assignmentId, attachmentId } = extractEdpuzzleIds(window.location.href);
+        const new_url = `${edpuzzle_api}${assignmentId}/attachments/${attachmentId}/content`
+        const response = await fetch(new_url);
         const data = await response.json();
+        console.warn(data);
         assignmentData = data;
         return data;
     } catch (error) {
@@ -361,7 +544,9 @@ async function getAssignment() {
 async function skipVideo() {
     try {
         const [csrf, data] = await getCSRF();
-        postSkipVideo(csrf, data);
+        console.warn(csrf);
+        console.warn(data);
+        // postSkipVideo(csrf, data);
     } catch (error) {
         console.error("Error skipping video:", error);
     }
@@ -372,8 +557,11 @@ async function getCSRF(): Promise<[string, AssignmentData]> {
     const csrfData = await csrfRes.json();
     const csrf = csrfData.CSRFToken;
 
+
     const assignment_id = window.location.href.split("/")[4];
-    const attemptRes = await fetch(`https://edpuzzle.com/api/v3/assignments/${assignment_id}/attempt`);
+    const { assignmentId, attachmentId } = extractEdpuzzleIds(window.location.href);
+    console.warn(assignment_id);
+    const attemptRes = await fetch(`https://edpuzzle.com/api/v3/learning/assignments/${assignmentId}/attachments/${attachmentId}/${assignmentId}/attempt`);
     const attemptData = await attemptRes.json();
 
     return [csrf, attemptData];
@@ -393,6 +581,7 @@ interface Window {
 }
 
 function postSkipVideo(csrf: string, data: AssignmentData) {
+    console.warn(csrf);
     const id = data._id;
     const teacher_assignment_id = data.teacherAssignmentId;
     const referrer = `https://edpuzzle.com/assignments/${teacher_assignment_id}/watch`;
@@ -418,7 +607,10 @@ function postSkipVideo(csrf: string, data: AssignmentData) {
 
 async function getQuestions() {
     const assignmentData = await getAssignment();
-    const questionData = assignmentData.medias[0].questions;
-
+    const questionData = assignmentData;
+    console.warn(questionData);
     return questionData;
 }
+
+appendQuestions();
+// getAssignment();

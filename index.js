@@ -97,6 +97,7 @@ pDocument.title = "EdPuzzle Hack";
 const container = ElementBuilder.create(pDocument, "div", "container").attachTo(pBody);
 const title = ElementBuilder.create(pDocument, "h1", "text").setText("EdPuzzle Hack");
 const skipVideoBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Skip Video.");
+const convertToJsonBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Convert JSON to ");
 const questionWrapper = ElementBuilder.create(pDocument, "div", "question-container");
 container.append(title);
 container.append(skipVideoBtn);

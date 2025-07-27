@@ -25,7 +25,7 @@ body {
     cursor: pointer;
     padding: 14px 24px;
     transition: all 0.3s ease;
-    margin-left: 1rem;
+    margin: 1rem;
     box-shadow: 0 4px 15px rgba(0,0,0,0.25);
     font-size: 1rem;
     letter-spacing: 0.5px;
@@ -133,17 +133,17 @@ pDocument.head.appendChild(Object.assign(pDocument.createElement("style"), { tex
 pDocument.title = "EdPuzzle Hack";
 const container = ElementBuilder.create(pDocument, "div", "container").attachTo(pBody);
 const title = ElementBuilder.create(pDocument, "h1", "text").setText("EdPuzzle Hack");
-const skipVideoBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Skip Video.");
 const convertToJsonBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Create Payload.");
 const uploadJsonAnswerBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Upload JSON Answers");
+const speedUpVideo = ElementBuilder.create(pDocument, "button", "btn").setText("Speed Up Video.");
 const questionWrapper = ElementBuilder.create(pDocument, "div", "question-container");
 container.append(title);
-container.append(skipVideoBtn);
 container.append(convertToJsonBtn);
 container.append(uploadJsonAnswerBtn);
+container.append(speedUpVideo);
 convertToJsonBtn.onClick(createPayloadFile);
-skipVideoBtn.onClick(skipVideo);
 uploadJsonAnswerBtn.onClick(uploadJsonAnswer);
+speedUpVideo.onClick(editVideoData);
 function uploadJsonAnswer() {
     const input = pDocument.createElement("input");
     input.type = "file";
@@ -184,148 +184,73 @@ function uploadJsonAnswer() {
     input.click();
     input.remove();
 }
-const htmlPayloadContent = `
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="https://cdn.nba.com/headshots/nba/latest/1040x760/2544.png" type="image/png" />
-    <title>Upload JSON</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            height: 100vh;
-            background: linear-gradient(155deg, #54546e 0%, #17173b 87%);
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .container {
-            width: 400px;
-            height: 200px;
-            border: 2px dashed #888;
-            border-radius: 16px;
-            background-color: rgba(255, 255, 255, 0.03);
-            text-align: center;
-            padding: 20px;
-            color: #ccc;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            position: relative;
-            cursor: pointer;
-        }
-
-        .container.dragover {
-            background-color: rgba(0, 170, 255, 0.1);
-            border-color: #00aaff;
-            color: #00aaff;
-        }
-
-        .container p {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .upload-icon {
-            font-size: 48px;
-            margin-bottom: 10px;
-            color: #aaa;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="container" id="dropZone">
-        <div class="upload-icon">woah..</div>
-        <p>Drag & Drop JSON Payload</p>
-        <p>or click to select a file</p>
-        <input type="file" id="fileInput" accept=".json" />
-    </div>
-
-    <script>
-        const dropZone = document.getElementById("dropZone");
-        const fileInput = document.getElementById("fileInput");
-
-        dropZone.addEventListener("click", () => fileInput.click());
-
-        dropZone.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            dropZone.classList.add("dragover");
-        });
-
-        dropZone.addEventListener("dragleave", () => {
-            dropZone.classList.remove("dragover");
-        });
-
-        dropZone.addEventListener("drop", (e) => {
-            e.preventDefault();
-            dropZone.classList.remove("dragover");
-
-            const files = e.dataTransfer.files;
-            if (files.length) {
-                handleFiles(files);
+let MAIN_JSON_DATA;
+function createHtmlPayload(json_content, filename) {
+    const jsonStr = JSON.stringify(json_content)
+        .replace(/\\/g, "\\\\")
+        .replace(/`/g, "\\`")
+        .replace(/\$/g, "\\$");
+    const htmlPayloadContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" href="https://cdn.nba.com/headshots/nba/latest/1040x760/2544.png" type="image/png" />
+        <title>Upload JSON</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
-        });
-
-        fileInput.addEventListener("change", () => {
-            if (fileInput.files.length) {
-                handleFiles(fileInput.files);
+    
+            body {
+                height: 100vh;
+                background: linear-gradient(155deg, #54546e 0%, #17173b 87%);
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
             }
-        });
-
-        function handleFiles(files) {
-            const file = files[0]
-            const reader = new FileReader();
-
-            reader.onload = () => {
-                const fileContent = reader.result
-
-                fetch("http://127.0.0.1:5090/upload", {
-                    method: "POST",
-                    "headers": {
-                        "Content-Type": "application/json"
-                    },
-                    body: fileContent
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Server response: ", data);
-
-                        const blob = new Blob([JSON.stringify(data, null, 4)], { type: "application/json" })
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = "answers.json";
-                        document.body.append(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    })
-                    .catch(error => {
-                        console.error(error);
-                    })
-            }
-            reader.readAsText(file);
-        }
-    </script>
-</body>
-
-</html>
-`;
+        </style>
+    </head>
+    <body>
+        <h1 id="status">Fetching Answers...</h1>
+        <script>
+            const json_data = \`${jsonStr}\`;
+            fetch("http://127.0.0.1:5090/upload", {
+                method: "POST",
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                body: json_data
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Server response: ", data);
+                
+                const blob = new Blob([JSON.stringify(data, null, 4)], { type: "application/json" })
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = '${filename}';
+                document.body.append(a);
+                document.getElementById("status").textContent = "Fetched Answers!";
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error(error);
+            })
+        </script>
+    </body>
+    </html>
+    `;
+    return htmlPayloadContent;
+}
 function createPayloadFile() {
     try {
         const questionElements = Array.from(pDocument.querySelectorAll(".inner-question-container"));
@@ -346,10 +271,7 @@ function createPayloadFile() {
                 });
             }
         });
-        downloadJsonFile(payload, `edpuzzle-payload-${assignment_id}.json`);
-        console.warn(`Payload created successfully`);
-        console.warn("Creating HTML file.");
-        downloadHtmlPayload();
+        downloadHtmlPayload(payload);
         console.warn("Created HTML Payload File.");
     }
     catch (error) {
@@ -357,13 +279,15 @@ function createPayloadFile() {
         alert(`Payload creation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
 }
-function downloadHtmlPayload() {
+function downloadHtmlPayload(json_data) {
     try {
-        const blob = new Blob([htmlPayloadContent], { type: "text/html" });
+        const filename = `${assignment_id}-edpuzzle.html`;
+        const htmlContent = createHtmlPayload(json_data, `${assignment_id}-answers.json`);
+        const blob = new Blob([htmlContent], { type: "text/html" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "htmlPayload.html";
+        a.download = filename;
         a.style.display = "none";
         document.body.appendChild(a);
         a.click();
@@ -371,25 +295,11 @@ function downloadHtmlPayload() {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }, 100);
-        popup.alert("Open 'htmlPayload.html' and upload the 'payload.json'");
+        popup.alert(`Open '${filename}' and wait for the answers. Click 'Upload JSON Answers' and select the '${assignment_id}-answers.json' file.`);
     }
     catch (error) {
         console.error(`Error in Creating HTML PayloadFile: ${error}`);
     }
-}
-function downloadJsonFile(data, filename) {
-    const blob = new Blob([JSON.stringify(data, null, 4)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 100);
 }
 async function appendQuestions() {
     try {
@@ -476,54 +386,46 @@ async function getAssignment() {
         return null;
     }
 }
-async function skipVideo() {
-    try {
-        const [csrf, data] = await getCSRF();
-        console.warn(csrf);
-        console.warn(data);
-    }
-    catch (error) {
-        console.error("Error skipping video:", error);
-    }
-}
-async function getCSRF() {
-    const csrfRes = await fetch(csrfApi);
-    const csrfData = await csrfRes.json();
-    const csrf = csrfData.CSRFToken;
-    const assignment_id = window.location.href.split("/")[4];
-    const { assignmentId, attachmentId } = extractEdpuzzleIds(window.location.href);
-    console.warn(assignment_id);
-    const attemptRes = await fetch(`https://edpuzzle.com/api/v3/learning/assignments/${assignmentId}/attachments/${attachmentId}/${assignmentId}/attempt`);
-    const attemptData = await attemptRes.json();
-    return [csrf, attemptData];
-}
-function postSkipVideo(csrf, data) {
-    console.warn(csrf);
-    const id = data._id;
-    const teacher_assignment_id = data.teacherAssignmentId;
-    const referrer = `https://edpuzzle.com/assignments/${teacher_assignment_id}/watch`;
-    const url = `https://edpuzzle.com/api/v4/media_attempts/${id}/watch`;
-    fetch(url, {
-        method: "POST",
-        headers: {
-            "accept": "application/json, text/plain, */*",
-            "accept_language": "en-US,en;q=0.9",
-            "content-type": "application/json",
-            "x-csrf-token": csrf,
-            "x-edpuzzle-referrer": referrer,
-            "x-edpuzzle-web-version": window.__EDPUZZLE_DATA__.version
-        },
-        body: JSON.stringify({ timeIntervalNumber: 10 })
-    })
-        .then(() => {
-        window.location.reload();
-    })
-        .catch(console.error);
-}
 async function getQuestions() {
     const assignmentData = await getAssignment();
     const questionData = assignmentData;
     console.warn(questionData);
     return questionData;
+}
+function editVideoData() {
+    const maxSpeed = 2;
+    const iframe = window.document.querySelector("iframe");
+    if (!iframe.id) {
+        alert("Error: Count not find YouTube Iframe.");
+        return;
+    }
+    const player = window.YT.get(iframe.id);
+    let events;
+    for (let key in player) {
+        let item = player[key];
+        if (item + "" != "[object Object]")
+            continue;
+        for (let key_2 in item) {
+            let item_2 = item[key_2];
+            if (Array.isArray(item_2) && typeof item_2[1] == "string" && item_2[1].startsWith("on")) {
+                events = item[key_2];
+                break;
+            }
+        }
+        if (events)
+            break;
+    }
+    for (let i = 1; i < events.length; i++) {
+        let event = events[i];
+        if (event == "onPlaybackRateChange") {
+            events[i + 1] = function () { };
+        }
+    }
+    player.setPlaybackRate(maxSpeed);
+    document.addEventListener("visibilitychange", (e) => {
+        if (document.visibilityState) {
+            e.stopImmediatePropagation();
+        }
+    }, true);
 }
 appendQuestions();

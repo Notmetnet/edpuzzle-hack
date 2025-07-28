@@ -1,56 +1,103 @@
 const styleText = `
 body {
-    background: #3a3596;
-    background: linear-gradient(155deg,rgba(58, 53, 150, 1) 0%, rgba(39, 39, 61, 1) 87%);
-    color: white;
-    font-family: 'Arial', sans-serif;
+    background: linear-gradient(160deg, #2c3e50, #1a1a2e);
+    color: #f0f0f0;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    margin: 0;
+    padding: 2rem;
+    line-height: 1.6;
+}
+
+.text {
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+    color: #e0e0e0;
+}
+
+.warn-text {
+    color: #a1a1a1ff;
 }
 
 .btn {
-    color: white;
-    background-color: #242424;
-    border: none;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 15px;
     cursor: pointer;
-    padding: 15px;
-    transition: all .2s ease;
+    padding: 14px 24px;
+    transition: all 0.3s ease;
+    margin: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    font-size: 1rem;
+    letter-spacing: 0.5px;
 }
 
 .btn:hover {
-    background-color: #323232;
-    transform: scale(1.08);
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.06);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .question-container {
     margin-top: 2rem;
     display: flex;
     flex-direction: column;
+    gap: 1.5rem;
 }
 
 .inner-question-container {
-    margin-bottom: 20px;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+    border-left: 4px solid #00bcd4;
+}
+
+.inner-question-container:hover {
+    transform: scale(1.01);
+}
 
 .question-text {
-    margin-bottom: 10px;
-    color: #fff;
+    margin-bottom: 14px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffffff;
 }
 
 .choices-container {
-    margin-left: 20px;
+    margin-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .question-choice {
-    margin: 5px 0;
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 5px;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    transition: background 0.2s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.question-choice:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.credits {
+    text-align: center;
+    font-size: 1rem;
+    padding: 1rem;
 }
 `;
 
-const windowFeatures = "left=100,top=100,width=520,height=520";
+const windowFeatures = "left=0,top=0,width=800,height=800";
 const popup = window.open("about:blank", "_blank", windowFeatures);
 if (!popup) {
     alert("Popup blocked!");
@@ -71,7 +118,6 @@ class ElementBuilder {
     setText(text: string) {
         this.element.textContent = text;
         return this;
-
     }
 
     append(child: ElementBuilder): this {
@@ -98,71 +144,271 @@ class ElementBuilder {
     }
 }
 
+let assignmentData: object;
+
 const pDocument = popup.document;
 const pBody = popup.document.body;
 pDocument.head.appendChild(Object.assign(pDocument.createElement("style"), { textContent: styleText }));
-pDocument.title = "EdPuzzle Hack";
+pDocument.title = "Edpuzzle Hack";
 
 const container = ElementBuilder.create(pDocument, "div", "container").attachTo(pBody);
-const title = ElementBuilder.create(pDocument, "h1", "text").setText("EdPuzzle Hack");
-const skipVideoBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Skip Video.");
-const convertToJsonBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Convert JSON to ")
+const title = ElementBuilder.create(pDocument, "h1", "text").setText("Edpuzzle Hack");
+const hr = ElementBuilder.create(pDocument, "hr");
+const warning = ElementBuilder.create(pDocument, "p", "warn-text").setText("Answers may not be correct.");
+
+const convertToJsonBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Create Payload.");
+const uploadJsonAnswerBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Upload JSON Answers");
+const speedUpVideoBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Speed Up Video.");
+
+const footer = ElementBuilder.create(pDocument, "h1", "credits").setText("Created By Notmetnet.");
 
 const questionWrapper = ElementBuilder.create(pDocument, "div", "question-container");
 
-
-
 container.append(title);
-container.append(skipVideoBtn);
+container.append(hr);
+container.append(warning);
+container.append(convertToJsonBtn);
+container.append(uploadJsonAnswerBtn);
+container.append(speedUpVideoBtn);
 
-skipVideoBtn.onClick(skipVideo);
+convertToJsonBtn.onClick(createPayloadFile);
+uploadJsonAnswerBtn.onClick(uploadJsonAnswer);
+speedUpVideoBtn.onClick(editVideoData);
 
+function uploadJsonAnswer() {
+    const input = pDocument.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.style.display = "none";
 
+    input.onchange = () => {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = reader.result;
+            if (typeof result === "string") {
+                const data = JSON.parse(result);
+                const answers = data.answers || [];
+
+                // Matching logic remains the same
+                const questionElements = pDocument.querySelectorAll(".inner-question-container");
+                questionElements.forEach((questionEl) => {
+                    const questionTextRaw = questionEl.querySelector(".question-text")?.textContent || "";
+                    const questionText = sanitizeText(questionTextRaw.replace(/^\d+\.\s*/, ""));
+
+                    const matched = answers.find(q => {
+                        const answerText = sanitizeText(q.question);
+                        return questionText.includes(answerText) || answerText.includes(questionText);
+                    });
+
+                    const answerP = document.createElement("p");
+                    answerP.style.color = "lime";
+                    answerP.style.fontWeight = "bold";
+                    answerP.textContent = matched ? `Answer: ${matched.answer}` : "Answer: No Match";
+
+                    if (matched.answer === "No Choices") {
+                        answerP.style.color = "red";
+                    }
+
+                    questionEl.appendChild(answerP);
+                });
+            } else {
+                console.error("File content is not a string.");
+            }
+        };
+
+        reader.readAsText(file);
+    };
+
+    pDocument.body.appendChild(input);
+    input.click();
+    input.remove();
+}
+interface ChoicePayload {
+    text: string;
+}
+
+interface QuestionPayload {
+    text: string;
+    choices: string[];
+}
+
+interface EdpuzzlePayload {
+    assignmentId: string;
+    questions: QuestionPayload[];
+}
+
+function createHtmlPayload(json_content: object, filename: string) {
+    const jsonStr = JSON.stringify(json_content)
+        .replace(/\\/g, "\\\\")
+        .replace(/`/g, "\\`")
+        .replace(/\$/g, "\\$");
+
+    const htmlPayloadContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" href="https://cdn.nba.com/headshots/nba/latest/1040x760/2544.png" type="image/png" />
+        <title>Upload JSON</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+    
+            body {
+                height: 100vh;
+                background: linear-gradient(155deg, #54546e 0%, #17173b 87%);
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 id="status">Fetching Answers...</h1>
+        <script>
+            const json_data = \`${jsonStr}\`;
+            fetch("http://127.0.0.1:5090/upload", {
+                method: "POST",
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                body: json_data
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Server response: ", data);
+                
+                const blob = new Blob([JSON.stringify(data, null, 4)], { type: "application/json" })
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = '${filename}';
+                document.body.append(a);
+                document.getElementById("status").textContent = "Fetched Answers!";
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                window.close();
+            })
+            .catch(error => {
+                console.error(error);
+            })
+        </script>
+    </body>
+    </html>
+    `
+    return htmlPayloadContent;
+}
+
+function createPayloadFile(): void {
+    try {
+        const questionElements = Array.from(pDocument.querySelectorAll(".inner-question-container"));
+        const payload: EdpuzzlePayload = {
+            assignmentId: assignment_id,
+            questions: []
+        };
+
+        questionElements.forEach((questionElement: Element) => {
+            const questionText = questionElement.querySelector(".question-text")?.textContent?.trim() || "";
+            const choiceElements = Array.from(questionElement.querySelectorAll(".question-choice"));
+
+            const choices = choiceElements.map((choiceElement: Element) => {
+                return choiceElement.textContent?.trim() || "";
+            });
+
+            if (questionText) {
+                payload.questions.push({
+                    text: questionText,
+                    choices
+                });
+            }
+        });
+        downloadHtmlFile(payload);
+        console.warn("Created HTML File.")
+    } catch (error) {
+        console.error(`Error in creating HTML file: ${error}`);
+        alert(`File creation failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+function downloadHtmlFile(json_data: object): void {
+    try {
+        const filename = `${assignment_id}-edpuzzle.html`;
+        const htmlContent = createHtmlPayload(json_data, `${assignment_id}-answers.json`);
+        const blob = new Blob([htmlContent], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.style.display = "none";
+        document.body.appendChild(a);
+
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+        popup.alert(`Open '${filename}' and wait for the answers. Click 'Upload JSON Answers' and select the '${assignment_id}-answers.json' file.`);
+    }
+    catch (error) {
+        console.error(`Error in Creating HTML PayloadFile: ${error}`)
+    }
+}
 
 async function appendQuestions() {
     try {
-        const questions = await getQuestions();
+        const assignment = await getQuestions();
+        const questions = assignment?.questions || [];
+
         questionWrapper.getElement().innerHTML = '';
 
-        if (!questions || !questions.length) {
+        if (!questions.length) {
             ElementBuilder.create(pDocument, "p", "no-questions")
                 .setText("No questions found in this assignment")
                 .attachTo(questionWrapper.getElement());
             return;
         }
 
-        questions.forEach((question, index) => {
-            if (!question.body?.[0]?.html) return;
+        questions.forEach((questionData: any, index: any) => {
+            const blocks = questionData.data?.body?.blocks || [];
+
+            const questionBlock = blocks.find(b => b.type === "text" && b.valueType === "html");
+            if (!questionBlock) return;
 
             const questionContainer = ElementBuilder.create(pDocument, "div", "inner-question-container");
+
             const questionText = ElementBuilder.create(pDocument, "h3", "question-text")
-                .setText(`${index + 1}. ${sanitizeString(question.body[0].html)}`);
+                .setText(`${index + 1}. ${sanitizeString(questionBlock.value)}`);
             questionContainer.append(questionText);
 
-            if (question.choices?.length) {
+            const choices = questionData.data?.choices || [];
+            if (choices.length) {
                 const choicesContainer = ElementBuilder.create(pDocument, "div", "choices-container");
 
-                question.choices.forEach(choice => {
-                    if (!choice.body?.[0]?.html) return;
+                choices.forEach(choice => {
+                    const choiceBlocks = choice.content?.blocks || [];
+                    const choiceTextBlock = choiceBlocks.find(b => b.type === "text" && b.valueType === "html");
+                    if (!choiceTextBlock) return;
 
                     const choiceText = ElementBuilder.create(pDocument, "p", "question-choice")
-                        .setText(sanitizeString(choice.body[0].html));
-
-                    if (choice.isCorrect) {
-                        choiceText.getElement().style.color = "#4CAF50";
-                        choiceText.getElement().style.fontWeight = "bold";
-                    }
-
+                        .setText(sanitizeString(choiceTextBlock.value));
                     choicesContainer.append(choiceText);
                 });
-
                 questionContainer.append(choicesContainer);
             }
-
             questionWrapper.append(questionContainer);
         });
-
         container.append(questionWrapper);
+        footer.attachTo(pBody);
     } catch (error) {
         console.error("Error loading questions:", error);
         ElementBuilder.create(pDocument, "p", "error-message")
@@ -171,16 +417,32 @@ async function appendQuestions() {
     }
 }
 
+function sanitizeText(text: string) {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9 ]/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function sanitizeString(htmlString: string) {
     const doc = new DOMParser().parseFromString(htmlString, "text/html");
     return doc.body.textContent || "";
 }
 
-appendQuestions();
-
-const edpuzzle_api = "https://edpuzzle.com/api/v3/assignments/";
+const edpuzzle_api = "https://edpuzzle.com/api/v3/learning/assignments/";
 const csrfApi = "https://edpuzzle.com/api/v3/csrf";
 const assignment_id = window.location.href.split("/")[4];
+
+function extractEdpuzzleIds(url: string): { assignmentId: string | null, attachmentId: string | null } {
+    const assignmentMatch = url.match(/assignments\/([a-f0-9]{24})/);
+    const assignmentId = assignmentMatch ? assignmentMatch[1] : null;
+
+    const urlObj = new URL(url);
+    const attachmentId = urlObj.searchParams.get("attachmentId");
+
+    return { assignmentId, attachmentId };
+}
 
 async function getAssignment() {
     if (!assignment_id) {
@@ -189,8 +451,12 @@ async function getAssignment() {
     }
 
     try {
-        const response = await fetch(edpuzzle_api + assignment_id);
+        const { assignmentId, attachmentId } = extractEdpuzzleIds(window.location.href);
+        const new_url = `${edpuzzle_api}${assignmentId}/attachments/${attachmentId}/content`
+        const response = await fetch(new_url);
         const data = await response.json();
+        console.warn(data);
+        assignmentData = data;
         return data;
     } catch (error) {
         console.error(error);
@@ -198,67 +464,57 @@ async function getAssignment() {
     }
 }
 
-async function skipVideo() {
-    try {
-        const [csrf, data] = await getCSRF();
-        postSkipVideo(csrf, data);
-    } catch (error) {
-        console.error("Error skipping video:", error);
-    }
+async function getQuestions() {
+    const assignmentData = await getAssignment();
+    const questionData = assignmentData;
+    console.warn(questionData);
+    return questionData;
 }
 
-async function getCSRF(): Promise<[string, AssignmentData]> {
-    const csrfRes = await fetch(csrfApi);
-    const csrfData = await csrfRes.json();
-    const csrf = csrfData.CSRFToken;
-
-    const assignment_id = window.location.href.split("/")[4];
-    const attemptRes = await fetch(`https://edpuzzle.com/api/v3/assignments/${assignment_id}/attempt`);
-    const attemptData = await attemptRes.json();
-
-    return [csrf, attemptData];
-}
-
-interface AssignmentData {
-    _id: string;
-    teacherAssignmentId: string;
-}
-
-interface EdpuzzleData {
-    version: string
+interface YTNamespace {
+    get: (id: string) => any;
 }
 
 interface Window {
-    __EDPUZZLE_DATA__: EdpuzzleData;
+    YT: YTNamespace;
+    onYouTubeIframeAPIReady: () => void;
 }
 
-function postSkipVideo(csrf: string, data: AssignmentData) {
-    const id = data._id;
-    const teacher_assignment_id = data.teacherAssignmentId;
-    const referrer = `https://edpuzzle.com/assignments/${teacher_assignment_id}/watch`;
-    const url = `https://edpuzzle.com/api/v4/media_attempts/${id}/watch`;
+function editVideoData(): void {
+    const maxSpeed = 2;
+    const iframe = window.document.querySelector("iframe") as HTMLIFrameElement;
+    if (!iframe.id) {
+        alert("Error: Count not find YouTube Iframe.");
+        return;
+    }
 
-    fetch(url, {
-        method: "POST",
-        headers: {
-            "accept": "application/json, text/plain, */*",
-            "accept_language": "en-US,en;q=0.9",
-            "content-type": "application/json",
-            "x-csrf-token": csrf,
-            "x-edpuzzle-referrer": referrer,
-            "x-edpuzzle-web-version": window.__EDPUZZLE_DATA__.version
-        },
-        body: JSON.stringify({ timeIntervalNumber: 10 })
-    })
-        .then(() => {
-            window.location.reload();
-        })
-        .catch(console.error);
+    const player = window.YT.get(iframe.id)
+    let events: any;
+    for (let key in player) {
+        let item = player[key];
+        if (item + "" != "[object Object]") continue;
+        for (let key_2 in item) {
+            let item_2 = item[key_2];
+            if (Array.isArray(item_2) && typeof item_2[1] == "string" && item_2[1].startsWith("on")) {
+                events = item[key_2];
+                break;
+            }
+        }
+        if (events) break;
+    }
+
+    for (let i = 1; i < events.length; i++) {
+        let event = events[i];
+        if (event == "onPlaybackRateChange") {
+            events[i + 1] = function () { };
+        }
+    }
+    player.setPlaybackRate(maxSpeed)
+
+    document.addEventListener("visibilitychange", (e) => {
+        if (document.visibilityState) {
+            e.stopImmediatePropagation();
+        }
+    }, true)
 }
-
-async function getQuestions() {
-    const assignmentData = await getAssignment();
-    const questionData = assignmentData.medias[0].questions;
-
-    return questionData;
-}
+appendQuestions();

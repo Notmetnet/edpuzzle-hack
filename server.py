@@ -5,6 +5,10 @@ import os
 import json
 
 edpuzzle_dir = "edpuzzles"
+
+if os.path.exists(edpuzzle_dir) == False:
+    os.mkdir(edpuzzle_dir)
+
 app = Flask(__name__)
 CORS(app)
 

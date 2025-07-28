@@ -7,7 +7,6 @@ import json
 edpuzzle_dir = "edpuzzles"
 app = Flask(__name__)
 CORS(app)
-EDPUZZLE_API = "https://edpuzzle.com/api/v3/assignments/"
 
 def generate_prompt(text):
     response = ollama.generate(model="llama3.1:latest", prompt=text)
@@ -89,16 +88,16 @@ def handle_upload():
     
     edpuzzle = getEdpuzzleFromDb(assignment_id + ".json")
     if edpuzzle:
-        with open(f"{edpuzzle_dir}\\{edpuzzle}", 'r') as fh:
-            edpuzzle_content = fh.read()
-            return jsonify({"status": "success", "database": True, "answers": edpuzzle_content}), 200
+        with open(f"{edpuzzle_dir}\\{edpuzzle}", 'r', encoding='utf-8') as fh:
+            edpuzzle_content = json.load(fh)
+            return jsonify({"status": "success", "answers": edpuzzle_content}), 200
     
     answers = parse_questions(data)
 
     with open(f"{edpuzzle_dir}\\{assignment_id}.json", 'w', encoding='utf-8') as fh:
         json.dump(answers, fh, indent=4, ensure_ascii=False)
 
-    return jsonify({"status": "success", "database": False, "answers": answers}), 200
+    return jsonify({"status": "success", "answers": answers}), 200
     
 if __name__ == "__main__":
     app.run("0.0.0.0", port=5090)

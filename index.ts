@@ -14,6 +14,10 @@ body {
     color: #e0e0e0;
 }
 
+.warn-text {
+    color: #a1a1a1ff;
+}
+
 .btn {
     color: #fff;
     background: rgba(255, 255, 255, 0.08);
@@ -51,6 +55,7 @@ body {
     backdrop-filter: blur(8px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     transition: transform 0.2s ease;
+    border-left: 4px solid #00bcd4;
 }
 
 .inner-question-container:hover {
@@ -84,6 +89,12 @@ body {
     background: rgba(255, 255, 255, 0.12);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
+
+.credits {
+    text-align: center;
+    font-size: 1rem;
+    padding: 1rem;
+}
 `;
 
 const windowFeatures = "left=0,top=0,width=800,height=800";
@@ -107,7 +118,6 @@ class ElementBuilder {
     setText(text: string) {
         this.element.textContent = text;
         return this;
-
     }
 
     append(child: ElementBuilder): this {
@@ -139,24 +149,31 @@ let assignmentData: object;
 const pDocument = popup.document;
 const pBody = popup.document.body;
 pDocument.head.appendChild(Object.assign(pDocument.createElement("style"), { textContent: styleText }));
-pDocument.title = "EdPuzzle Hack";
+pDocument.title = "Edpuzzle Hack";
 
 const container = ElementBuilder.create(pDocument, "div", "container").attachTo(pBody);
-const title = ElementBuilder.create(pDocument, "h1", "text").setText("EdPuzzle Hack");
+const title = ElementBuilder.create(pDocument, "h1", "text").setText("Edpuzzle Hack");
+const hr = ElementBuilder.create(pDocument, "hr");
+const warning = ElementBuilder.create(pDocument, "p", "warn-text").setText("Answers may not be correct.");
+
 const convertToJsonBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Create Payload.");
 const uploadJsonAnswerBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Upload JSON Answers");
-const speedUpVideo = ElementBuilder.create(pDocument, "button", "btn").setText("Speed Up Video.");
+const speedUpVideoBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Speed Up Video.");
+
+const footer = ElementBuilder.create(pDocument, "h1", "credits").setText("Created By Notmetnet.");
 
 const questionWrapper = ElementBuilder.create(pDocument, "div", "question-container");
 
 container.append(title);
+container.append(hr);
+container.append(warning);
 container.append(convertToJsonBtn);
 container.append(uploadJsonAnswerBtn);
-container.append(speedUpVideo);
+container.append(speedUpVideoBtn);
 
 convertToJsonBtn.onClick(createPayloadFile);
 uploadJsonAnswerBtn.onClick(uploadJsonAnswer);
-speedUpVideo.onClick(editVideoData);
+speedUpVideoBtn.onClick(editVideoData);
 
 function uploadJsonAnswer() {
     const input = pDocument.createElement("input");
@@ -191,6 +208,10 @@ function uploadJsonAnswer() {
                     answerP.style.fontWeight = "bold";
                     answerP.textContent = matched ? `Answer: ${matched.answer}` : "Answer: No Match";
 
+                    if (matched.answer === "No Choices") {
+                        answerP.style.color = "red";
+                    }
+
                     questionEl.appendChild(answerP);
                 });
             } else {
@@ -218,8 +239,6 @@ interface EdpuzzlePayload {
     assignmentId: string;
     questions: QuestionPayload[];
 }
-
-let MAIN_JSON_DATA: string;
 
 function createHtmlPayload(json_content: object, filename: string) {
     const jsonStr = JSON.stringify(json_content)
@@ -278,6 +297,7 @@ function createHtmlPayload(json_content: object, filename: string) {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+                window.close();
             })
             .catch(error => {
                 console.error(error);
@@ -312,15 +332,15 @@ function createPayloadFile(): void {
                 });
             }
         });
-        downloadHtmlPayload(payload);
-        console.warn("Created HTML Payload File.")
+        downloadHtmlFile(payload);
+        console.warn("Created HTML File.")
     } catch (error) {
-        console.error(`Error in createPayloadFile: ${error}`);
-        alert(`Payload creation failed: ${error instanceof Error ? error.message : String(error)}`);
+        console.error(`Error in creating HTML file: ${error}`);
+        alert(`File creation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
 }
 
-function downloadHtmlPayload(json_data: object): void {
+function downloadHtmlFile(json_data: object): void {
     try {
         const filename = `${assignment_id}-edpuzzle.html`;
         const htmlContent = createHtmlPayload(json_data, `${assignment_id}-answers.json`);
@@ -388,6 +408,7 @@ async function appendQuestions() {
             questionWrapper.append(questionContainer);
         });
         container.append(questionWrapper);
+        footer.attachTo(pBody);
     } catch (error) {
         console.error("Error loading questions:", error);
         ElementBuilder.create(pDocument, "p", "error-message")
@@ -459,7 +480,6 @@ interface Window {
     onYouTubeIframeAPIReady: () => void;
 }
 
-
 function editVideoData(): void {
     const maxSpeed = 2;
     const iframe = window.document.querySelector("iframe") as HTMLIFrameElement;
@@ -486,7 +506,6 @@ function editVideoData(): void {
     for (let i = 1; i < events.length; i++) {
         let event = events[i];
         if (event == "onPlaybackRateChange") {
-            //overwrite event listener with a blank function
             events[i + 1] = function () { };
         }
     }
@@ -498,5 +517,4 @@ function editVideoData(): void {
         }
     }, true)
 }
-
 appendQuestions();

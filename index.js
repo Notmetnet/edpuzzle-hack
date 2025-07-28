@@ -143,11 +143,6 @@ const pBody = popup.document.body;
 pDocument.head.appendChild(Object.assign(pDocument.createElement("style"), { textContent: styleText }));
 pDocument.title = "Edpuzzle Hack";
 const container = ElementBuilder.create(pDocument, "div", "container").attachTo(pBody);
-<<<<<<< HEAD
-const title = ElementBuilder.create(pDocument, "h1", "text").setText("EdPuzzle Hack");
-const skipVideoBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Skip Video.");
-const convertToJsonBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Convert JSON to ");
-=======
 const title = ElementBuilder.create(pDocument, "h1", "text").setText("Edpuzzle Hack");
 const hr = ElementBuilder.create(pDocument, "hr");
 const warning = ElementBuilder.create(pDocument, "p", "warn-text").setText("Answers may not be correct.");
@@ -155,7 +150,6 @@ const convertToJsonBtn = ElementBuilder.create(pDocument, "button", "btn").setTe
 const uploadJsonAnswerBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Upload JSON Answers");
 const speedUpVideoBtn = ElementBuilder.create(pDocument, "button", "btn").setText("Speed Up Video.");
 const footer = ElementBuilder.create(pDocument, "h1", "credits").setText("Created By Notmetnet.");
->>>>>>> assignment_post
 const questionWrapper = ElementBuilder.create(pDocument, "div", "question-container");
 container.append(title);
 container.append(hr);

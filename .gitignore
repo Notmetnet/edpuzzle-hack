@@ -1,3 +1,4 @@
-edpuzzles/
+edpuzzles/*
+!edpuzzles/.gitkeep
 server/
 htmlPopup.html
